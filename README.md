@@ -7,7 +7,7 @@ Telegram bot collects questions, complaints, appeals and requests from users.
 In development.
 
 ## Description
-A Telegram bot that allows you to collect user feedback.  
+Sync Telegram bot that allows you to collect user feedback.  
 In `tbot_app/telegram_bot/settings.py`, you can configure the bot name, contact information, and inline menu,
 including buttons that trigger the bot to process text messages and
 add records to a Google Sheets table.
