@@ -34,7 +34,7 @@ def insert_ticket_info(ticket: dict) -> None:
     """
     Insert ticket's information into Google Sheets.
 
-    :param ticket_info: List of ticket's values to insert into table.
+    :param ticket_info: Ticket's values to insert into table.
     """
     worksheet = get_worksheet()
     worksheet.append_row(make_ticket_info(ticket))
