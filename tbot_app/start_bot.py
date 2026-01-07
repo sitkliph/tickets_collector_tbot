@@ -1,3 +1,4 @@
+"""Starts telegram bot."""
 from telegram_bot import start_polling
 
 if __name__ == '__main__':
