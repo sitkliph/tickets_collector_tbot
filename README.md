@@ -1,18 +1,26 @@
-# Tickets_collector_Tbot
-Телеграм бот для сбора вопросов, жалоб, обращений и запросов от пользоватлей.
+# Tickets Collector Telegram Bot
+[![ru](https://img.shields.io/badge/lang-ru-blue.svg)](README.ru.md)
 
-## Описание проекта:
-Телеграмм бот, с помощью которого можно собирать обратную связь от пользователей.
-В `tbot_app/telegram_bot/settings.py` можно настроить название, контактную информацию, inline меню,
-включая кнопки, по нажатию которых бот обрабытывает произвольное текстовое сообщение и
-добавляет запись в таблицу Google Sheets.  
-Для тестирования и разработки используется хранилищее состояний - `telebot.storage.StateMemoryStorage`.
-При необходимости измените параметр STORAGE в `tbot_app/telegram_bot/settings.py`.
+Telegram bot collects questions, complaints, appeals and requests from users.
 
-### Структура проекта:
+## Status
+In development.
+
+## Description
+A Telegram bot that allows you to collect user feedback.  
+In `tbot_app/telegram_bot/settings.py`, you can configure the bot name, contact information, and inline menu,
+including buttons that trigger the bot to process text messages and
+add records to a Google Sheets table.
+
+For testing and development, the state storage `telebot.storage.StateMemoryStorage` is used.  
+If necessary, change the STORAGE parameter in `tbot_app/telegram_bot/settings.py`.
+
+### Structure
 ```
 tickets_collector_tbot/
+├── LICENSE
 ├── README.md
+├── README.ru.md
 ├── requirements.txt
 ├── setup.cfg
 ├── tbot_app/
@@ -33,15 +41,15 @@ tickets_collector_tbot/
     └── __init__.py
 ```
 
-### Стек использованных технологий:
+### Tech Stack
 
 - Python 3.12.7
 - pyTelegramBotAPI 4.22.1
 - gspread 6.2.1
 
-## Установка и запуск проекта:
+## Project Setup and Run
 
-### 1. Клонировать репозиторий и перейти в него в командной строке:
+### 1. Clone the repository and navigate into it using the command line
 
 ```bash
 git clone https://github.com/sitkliph/tickets_collector_tbot
@@ -51,7 +59,7 @@ git clone https://github.com/sitkliph/tickets_collector_tbot
 cd tickets_collector_tbot
 ```
 
-### 2. Cоздать и активировать виртуальное окружение:
+### 2. Create and activate a virtual environment
 
 ```bash
 python3 -m venv venv
@@ -62,7 +70,7 @@ source venv/bin/activate       # Linux / macOS
        venv/Scripts/activate   # Windows
 ```
 
-### 3. Установить зависимости из файла requirements.txt:
+### 3. Install dependencies from requirements.txt
 
 ```bash
 python3 -m pip install --upgrade pip
@@ -72,29 +80,33 @@ python3 -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Выполнить настроки проекта:
+### 4. Configurate the project
 
-- Создать проект в консоли Google Cloud.
-- Создать service user в консоли Google Cloud и получить JSON ключ.
-- Подключить service user к онлайн таблице Google Sheets.
-- Заполнить константы файлов `tbot_app/google_sheets/settings.py` и `tbot_app/telegram_bot/settings.py`.
-- Создать файл `.env` по примеру:
+- Create a project in Google Cloud Console.
+- Create a service user in Google Cloud Console and get a JSON key.
+- Add a service user in editors of Google Sheets table.
+- Fill constants in `tbot_app/google_sheets/settings.py` and `tbot_app/telegram_bot/settings.py`.
+- Create file `.env` like this:
 
 ```
 TELEGRAM_BOT_TOKEN = your_telegram_bot_token
 GOOGLE_API_JSON_KEY_PATH = path_to_service_user_json_key
 ```
 
-### 5. Запустить проект:
+### 5. Run project
 
 ```bash
 cd tbot_app
 python3 start_bot.py
 ```
 
-## Пример:
+## Example
 https://t.me/KhozRevizorBot
 
-## Авторы / Контакты
+## Author
 Sergei Bakin  
 sergey.bakin2000@gmail.com
+
+## License
+This project is licensed under the MIT License.  
+See the [LICENSE](LICENSE) for details.
