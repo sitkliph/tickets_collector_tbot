@@ -15,9 +15,14 @@ redis_client = redis.Redis(
 redis_client.sadd('users:admins', *settings.START_ADMIN_IDS)
 
 
-def get_admins_ids() -> set:
-    """Get ids of admin users."""
+def get_admins_ids():
+    """Get ids of admin users from database."""
     return redis_client.smembers('users:admins')
+
+
+def register_user(user_id: int) -> None:
+    """Register user in database."""
+    redis_client.sadd('users:all', str(user_id))
 
 
 def broadcast(text: str) -> dict:

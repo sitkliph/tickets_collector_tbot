@@ -22,4 +22,4 @@ class IsBotAdminFilter(SimpleCustomFilter):
         self.admin_ids = get_admins_ids()
 
     def check(self, message):
-        return message.from_user.id in self.admin_ids
+        return str(message.from_user.id) in self.admin_ids

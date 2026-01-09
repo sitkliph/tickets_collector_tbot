@@ -8,7 +8,7 @@ from telegram_bot import settings
 from telegram_bot.bot import bot
 from telegram_bot.menu import Menu
 from telegram_bot.states import SupportedStates as states
-# from telegram_bot.utils import broadcast, get_admins_ids, redis_client
+# from telegram_bot.utils import broadcast, get_admins_ids, register_user
 
 
 menu = Menu()
@@ -23,9 +23,13 @@ def command_start(message):
         '\n\n'
         'Выберите интересующий Вас раздел с помощью кнопок клавиатуры.'
     )
-    # if message.from_user.id in get_admins_ids():
+    # if str(message.from_user.id) in get_admins_ids():
     #     text += (
     #         '\n\n<b>Также Вам доступны команды администратора бота:</b>\n'
+    #         '<pre>/add_admin &ltID пользователя></pre>'
+    #         'добавление пользователя в список администраторов.'
+    #         '<pre>/del_admin &ltID пользователя></pre>'
+    #         'удаление пользователя из списка администраторов.'
     #         '<pre>/broadcast &ltтекст для рассылки></pre>'
     #         'рассылка сообщения всем пользователям, активировавшим бот <i>(во '
     #         'время выполнения команды бот перестает исполнять любые другие '
@@ -44,7 +48,7 @@ def command_start(message):
         if not data.get('tickets_counter'):
             data['tickets_counter'] = 0
 
-    # redis_client.sadd('users:all', str(user_id))
+    # register_user(user_id)
 
     bot.send_message(
         chat.id,
