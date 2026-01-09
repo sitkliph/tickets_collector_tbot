@@ -1,12 +1,11 @@
 """Initialize the telegram bot."""
 # import logging
 
-# import redis
 from telebot import custom_filters, TeleBot
 from telebot.states.sync.middleware import StateMiddleware
 
 from telegram_bot import settings
-from telegram_bot.filters import IsBotAdminFilter
+# from telegram_bot.filters import IsBotAdminFilter
 
 
 bot = TeleBot(
@@ -17,8 +16,4 @@ bot = TeleBot(
 )
 bot.setup_middleware(StateMiddleware(bot))
 bot.add_custom_filter(custom_filters.StateFilter(bot))
-bot.add_custom_filter(IsBotAdminFilter())
-
-# redis_client = redis.Redis(
-#     password=settings.DATA_BASE_PASSWORD, decode_responses=True
-# )
+# bot.add_custom_filter(IsBotAdminFilter())

@@ -2,9 +2,22 @@
 import time
 from typing import cast, Set
 
+import redis
 from telebot.apihelper import ApiTelegramException
 
-from telegram_bot.bot import bot, redis_client
+from telegram_bot import settings
+from telegram_bot.bot import bot
+
+
+redis_client = redis.Redis(
+    password=settings.DATA_BASE_PASSWORD, decode_responses=True
+)
+redis_client.sadd('users:admins', *settings.START_ADMIN_IDS)
+
+
+def get_admins_ids() -> set:
+    """Get ids of admin users."""
+    return redis_client.smembers('users:admins')
 
 
 def broadcast(text: str) -> dict:

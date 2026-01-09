@@ -2,7 +2,7 @@
 """Custom handlers' filters for telegram bot."""
 from telebot.custom_filters import SimpleCustomFilter
 
-from telegram_bot.settings import BOT_ADMINS
+from telegram_bot.utils import get_admins_ids
 
 
 class IsBotAdminFilter(SimpleCustomFilter):
@@ -19,7 +19,7 @@ class IsBotAdminFilter(SimpleCustomFilter):
     key = 'is_bot_admin'
 
     def __init__(self):
-        self.admin_ids = BOT_ADMINS
+        self.admin_ids = get_admins_ids()
 
     def check(self, message):
         return message.from_user.id in self.admin_ids
