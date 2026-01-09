@@ -1,11 +1,17 @@
 """Project's settings."""
+import os
+
+from dotenv import load_dotenv
 from telebot.storage import StateMemoryStorage
 
 from telegram_bot.states import SupportedStates as states
 
 
-BOT_NAME = 'ХозРевизор ДВГУПС'
+load_dotenv()
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+DATA_BASE_PASSWORD = os.getenv('DATA_BASE_PASSWORD')
 
+BOT_NAME = 'ХозРевизор ДВГУПС'
 CONTACT = {
     'name': 'Никита Ставров',
     'tg_username': 'NikStv',
@@ -13,12 +19,14 @@ CONTACT = {
 }
 
 NOTIFICATION_CHAT_ID = -1003679635348
-
 BOT_ADMINS = (
     290277110,
     327070804,
     830659667
 )
+
+# STORAGE = StateRedisStorage(password=DATA_BASE_PASSWORD)
+STORAGE = StateMemoryStorage()
 
 MENU_CONFIG = {
     'main': {
@@ -92,13 +100,3 @@ MENU_CONFIG = {
         )
     }
 }
-
-# STORAGE = StateRedisStorage(
-#     host='localhost',
-#     port=6379,
-#     db=0,
-#     password=None,
-#     prefix='telebot_'
-# )
-
-STORAGE = StateMemoryStorage()

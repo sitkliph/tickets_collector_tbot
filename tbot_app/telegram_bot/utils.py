@@ -1,0 +1,32 @@
+"""Utils for telegram bot."""
+import time
+from typing import cast, Set
+
+from telebot.apihelper import ApiTelegramException
+
+from telegram_bot.bot import bot, redis_client
+
+
+def broadcast(text: str) -> dict:
+    """
+    Send message to all bot's users.
+
+    Function sends message and returns sending's statistics.
+    """
+    chat_ids = cast(Set, redis_client.smembers('users:all'))
+    stats = {
+        'total': len(chat_ids),
+        'sent': 0,
+        'failed': 0
+    }
+
+    for chat_id in chat_ids:
+        try:
+            bot.send_message(int(chat_id), text)
+            stats['sent'] += 1
+            time.sleep(0.1)
+        except ApiTelegramException:
+            stats['failed'] += 1
+            time.sleep(0.1)
+
+    return stats

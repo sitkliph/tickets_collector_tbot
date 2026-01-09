@@ -8,20 +8,29 @@ from telegram_bot import settings
 from telegram_bot.bot import bot
 from telegram_bot.menu import Menu
 from telegram_bot.states import SupportedStates as states
+# from telegram_bot.utils import broadcast
 
 
 menu = Menu()
 
 
 @bot.message_handler(commands=['start',])
-def start_message(message):
+def command_start(message):
     """Handle command /start."""
     chat = message.chat
     text = (
         f'<b>{chat.first_name}, добро пожаловать в {settings.BOT_NAME}!</b>'
         '\n\n'
-        'Выберите интересующий Вас раздел с помощью кнопок клавиатуры:'
+        'Выберите интересующий Вас раздел с помощью кнопок клавиатуры.'
     )
+    if message.from_user.id in settings.BOT_ADMINS:
+        text += (
+            '\n\n<b>Также Вам доступны команды администратора бота:</b>\n'
+            '<pre>/broadcast &ltтекст для рассылки></pre>'
+            'рассылка сообщения всем пользователям, активировавшим бот <i>(во '
+            'время выполнения команды бот перестает исполнять любые другие '
+            'запросы от всех пользователей).</i>'
+        )
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     button_tickets = types.KeyboardButton('Жилищно-бытовая проблема')
     button_contacts = types.KeyboardButton('Контакты')
@@ -35,11 +44,38 @@ def start_message(message):
         if not data.get('tickets_counter'):
             data['tickets_counter'] = 0
 
+    # redis_client.sadd('users:all', str(chat.id))
+
     bot.send_message(
         chat.id,
         text,
         reply_markup=keyboard
     )
+
+
+# @bot.message_handler(commands=['broadcast'], is_bot_admin=True)
+# def command_broadcast(message):
+#     """Handle admin command /broadcast."""
+#     parts = message.text.split(maxsplit=1)
+#     if len(parts) < 2 or not parts[1].strip():
+#         return bot.reply_to(
+#             message,
+#             (
+#                 'Команда введена неверно!\n'
+#                 'Правильное использование: '
+#                 '<code>/broadcast &lтекст для рассылки></code>'
+#             )
+#         )
+
+#     stats = broadcast(parts[1].strip())
+#     bot.reply_to(
+#         message,
+#         (
+#             'Рассылка завершена.\n'
+#             'Всего попыток: {total}, из них: '
+#             'успешно отправлено - {sent}, ошибок - {failed}.'
+#         ).format(**stats)
+#     )
 
 
 @bot.message_handler(
