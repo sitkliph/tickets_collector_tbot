@@ -5,8 +5,8 @@ from telebot import types
 
 from google_sheets import insert_ticket_info
 from telegram_bot import settings
-from telegram_bot import utils
-from telegram_bot import text_templates
+# from telegram_bot import text_templates
+# from telegram_bot import utils
 from telegram_bot.bot import bot
 # from telegram_bot.decorators import confirm_command
 from telegram_bot.menu import Menu
@@ -26,8 +26,8 @@ def command_start(message):
         '\n\n'
         'Выберите интересующий Вас раздел с помощью кнопок клавиатуры.'
     )
-    if str(message.from_user.id) in utils.get_admins_ids():
-        text += text_templates.ADMIN_COMANDS
+    # if str(message.from_user.id) in utils.get_admins_ids():
+    #     text += text_templates.ADMIN_COMANDS
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     button_tickets = types.KeyboardButton('Жилищно-бытовая проблема')
     button_contacts = types.KeyboardButton('Контакты')
@@ -41,7 +41,7 @@ def command_start(message):
         if not data.get('tickets_counter'):
             data['tickets_counter'] = 0
 
-    utils.register_user(user_id)
+    # utils.register_user(user_id)
 
     bot.send_message(
         chat.id,
