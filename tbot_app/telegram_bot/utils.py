@@ -3,26 +3,41 @@ import time
 from typing import cast, Set
 
 import redis
+from telebot.types import Message
 from telebot.apihelper import ApiTelegramException
 
 from telegram_bot import settings
 from telegram_bot.bot import bot
+from telegram_bot.exceptions import InvalidAdminCommandError
 
+
+USERS_DATABASE_KEY = 'users:all'
+ADMINS_DATABASE_KEY = 'users:admins'
 
 redis_client = redis.Redis(
     password=settings.DATA_BASE_PASSWORD, decode_responses=True
 )
-redis_client.sadd('users:admins', *settings.START_ADMIN_IDS)
+redis_client.sadd(ADMINS_DATABASE_KEY, *settings.START_ADMIN_IDS)
 
 
-def get_admins_ids():
+def get_admins_ids() -> Set:
     """Get ids of admin users from database."""
-    return redis_client.smembers('users:admins')
+    return cast(Set, redis_client.smembers(ADMINS_DATABASE_KEY))
+
+
+def add_admin(user_id: int) -> None:
+    """Add admin in database."""
+    redis_client.sadd(ADMINS_DATABASE_KEY, str(user_id))
+
+
+def del_admin(user_id: int) -> None:
+    """Delete admin from database."""
+    redis_client.srem(ADMINS_DATABASE_KEY, str(user_id))
 
 
 def register_user(user_id: int) -> None:
     """Register user in database."""
-    redis_client.sadd('users:all', str(user_id))
+    redis_client.sadd(USERS_DATABASE_KEY, str(user_id))
 
 
 def broadcast(text: str) -> dict:
@@ -48,3 +63,16 @@ def broadcast(text: str) -> dict:
             time.sleep(0.1)
 
     return stats
+
+
+def get_command_param(message: Message) -> str:
+    """Check admin command and get parametr from the message."""
+    parts = message.text.split(maxsplit=1)
+    command = parts[0].lstrip('/')
+    try:
+        param = parts[1].strip()
+    except IndexError:
+        raise InvalidAdminCommandError(message, command)
+    if command != 'broadcast' and not param.isdigit():
+        raise InvalidAdminCommandError(message, command)
+    return command, param

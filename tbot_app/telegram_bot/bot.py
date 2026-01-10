@@ -1,6 +1,4 @@
 """Initialize the telegram bot."""
-# import logging
-
 from telebot import custom_filters, TeleBot
 from telebot.states.sync.middleware import StateMiddleware
 

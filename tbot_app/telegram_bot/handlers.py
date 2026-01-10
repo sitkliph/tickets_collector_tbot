@@ -5,15 +5,18 @@ from telebot import types
 
 from google_sheets import insert_ticket_info
 from telegram_bot import settings
+from telegram_bot import utils
+from telegram_bot import text_templates
 from telegram_bot.bot import bot
+from telegram_bot.decorators import confirm_command
 from telegram_bot.menu import Menu
 from telegram_bot.states import SupportedStates as states
-# from telegram_bot.utils import broadcast, get_admins_ids, register_user
 
 
 menu = Menu()
 
 
+# Default commands.
 @bot.message_handler(commands=['start',])
 def command_start(message):
     """Handle command /start."""
@@ -23,18 +26,8 @@ def command_start(message):
         '\n\n'
         'Выберите интересующий Вас раздел с помощью кнопок клавиатуры.'
     )
-    # if str(message.from_user.id) in get_admins_ids():
-    #     text += (
-    #         '\n\n<b>Также Вам доступны команды администратора бота:</b>\n'
-    #         '<pre>/add_admin &ltID пользователя></pre>'
-    #         'добавление пользователя в список администраторов.'
-    #         '<pre>/del_admin &ltID пользователя></pre>'
-    #         'удаление пользователя из списка администраторов.'
-    #         '<pre>/broadcast &ltтекст для рассылки></pre>'
-    #         'рассылка сообщения всем пользователям, активировавшим бот <i>(во '
-    #         'время выполнения команды бот перестает исполнять любые другие '
-    #         'запросы от всех пользователей).</i>'
-    #     )
+    if str(message.from_user.id) in utils.get_admins_ids():
+        text += text_templates.ADMIN_COMANDS
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     button_tickets = types.KeyboardButton('Жилищно-бытовая проблема')
     button_contacts = types.KeyboardButton('Контакты')
@@ -48,7 +41,7 @@ def command_start(message):
         if not data.get('tickets_counter'):
             data['tickets_counter'] = 0
 
-    # register_user(user_id)
+    utils.register_user(user_id)
 
     bot.send_message(
         chat.id,
@@ -57,31 +50,63 @@ def command_start(message):
     )
 
 
-# @bot.message_handler(commands=['broadcast'], is_bot_admin=True)
-# def command_broadcast(message):
-#     """Handle admin command /broadcast."""
-#     parts = message.text.split(maxsplit=1)
-#     if len(parts) < 2 or not parts[1].strip():
-#         return bot.reply_to(
-#             message,
-#             (
-#                 'Команда введена неверно!\n'
-#                 'Правильное использование: '
-#                 '<code>/broadcast &lтекст для рассылки></code>'
-#             )
-#         )
-
-#     stats = broadcast(parts[1].strip())
-#     bot.reply_to(
-#         message,
-#         (
-#             'Рассылка завершена.\n'
-#             'Всего попыток: {total}, из них: '
-#             'успешно отправлено - {sent}, ошибок - {failed}.'
-#         ).format(**stats)
-#     )
+# Admin commands (Redis is required).
+@bot.message_handler(
+    commands=['add_admin', 'del_admin', 'broadcast'], is_bot_admin=True
+)
+@confirm_command
+def admin_commands(message):
+    """Handle admin commands."""
+    return utils.get_command_param(message)
 
 
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith('confirm'), is_bot_admin=True
+)
+def confirm_admin_commands(call):
+    """Handle confirmation of admin commands."""
+    _, command, param = call.data.split(':')
+
+    if command == 'add_admin':
+        utils.add_admin(int(param))
+        text = (
+            f'<a href="tg://user?id={int(param)}">Пользователь</a>'
+            'добавлен в список администраторов.'
+        )
+    elif command == 'del_admin':
+        utils.del_admin(int(param))
+        text = (
+            f'<a href="tg://user?id={int(param)}">Пользователь</a>'
+            'удален из списка администраторов.'
+        )
+    elif command == 'broadcast':
+        stats = utils.broadcast(param)
+        text = (
+            'Рассылка завершена.\n'
+            'Всего попыток: {total}, из них: '
+            'успешно отправлено - {sent}, ошибок - {failed}.'
+        ).format(**stats)
+
+    bot.edit_message_text(
+        text,
+        call.message.chat.id,
+        call.message.message_id
+    )
+
+
+@bot.callback_query_handler(
+    func=lambda call: call.data == 'cancel', is_bot_admin=True
+)
+def cancel_admin_commands(call):
+    """Handle cancelation of admin commands."""
+    bot.edit_message_text(
+        'Команда отменена.',
+        call.message.chat.id,
+        call.message.message_id
+    )
+
+
+# Tickets block.
 @bot.message_handler(
     func=lambda message: message.text == 'Жилищно-бытовая проблема'
 )
@@ -179,6 +204,7 @@ def reply_state_handler(message):
     )
 
 
+# Contact block.
 @bot.message_handler(func=lambda message: message.text == 'Контакты')
 def contact_block(message):
     """Send message with contact information."""

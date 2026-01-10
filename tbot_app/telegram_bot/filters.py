@@ -1,4 +1,3 @@
-# flake8: noqa: D103, D107
 """Custom handlers' filters for telegram bot."""
 from telebot.custom_filters import SimpleCustomFilter
 
