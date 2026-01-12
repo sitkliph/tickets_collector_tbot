@@ -7,13 +7,14 @@ from google_sheets import insert_ticket_info
 from telegram_bot import settings
 # from telegram_bot import text_templates
 # from telegram_bot import utils
-from telegram_bot.bot import bot
+from telegram_bot.bot import bot, bot_logger
 # from telegram_bot.decorators import confirm_command
 from telegram_bot.menu import Menu
 from telegram_bot.states import SupportedStates as states
 
 
 menu = Menu()
+logger = bot_logger
 
 
 # Default commands.
@@ -57,6 +58,10 @@ def command_start(message):
 # @confirm_command
 # def admin_commands(message):
 #     """Handle admin commands."""
+#     logger.info(
+#         f'Пользователем @{message.from_user.username} введена команда '
+#         'администратора.'
+#     )
 #     return utils.get_command_param(message)
 
 
@@ -86,6 +91,10 @@ def command_start(message):
 #             'Всего попыток: {total}, из них: '
 #             'успешно отправлено - {sent}, ошибок - {failed}.'
 #         ).format(**stats)
+
+#     logger.info(
+#         f'Подтверждена и выполнена команда /{command} с параметром {param}.'
+#     )
 
 #     bot.edit_message_text(
 #         text,
@@ -227,4 +236,13 @@ def contact_block(message):
 
 def start_polling():
     """Start polling of telegram server."""
-    bot.polling()
+    last_notification_message = ''
+    try:
+        bot.polling()
+    except Exception as error:
+        notification_message = f'Сбой в работе программы: {error}'
+        if last_notification_message != notification_message:
+            bot.send_message(
+                settings.NOTIFICATION_CHAT_ID,
+                notification_message,
+            )

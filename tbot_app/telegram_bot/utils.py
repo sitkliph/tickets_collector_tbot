@@ -65,7 +65,7 @@ def broadcast(text: str) -> dict:
     return stats
 
 
-def get_command_param(message: Message) -> str:
+def get_command_param(message: Message) -> tuple:
     """Check admin command and get parametr from the message."""
     parts = message.text.split(maxsplit=1)
     command = parts[0].lstrip('/')
