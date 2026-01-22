@@ -115,6 +115,27 @@ def command_start(message):
 #     )
 
 
+# Contact block.
+@bot.message_handler(func=lambda message: message.text == 'Контакты')
+def contact_block(message):
+    """Send message with contact information."""
+    text = (
+        '<b>Жилищно-бытовая комиссия Профкома студентов ДВГУПС</b>\n'
+        'Председатель комиссии: '
+        '<a href="https://t.me/{tg_username}">{name}</a>\n'
+        '(также можете написать во '
+        '<a href="https://vk.com/{vk_username}">Вконтакте</a>)\n\n'
+        'Профком студентов ДВГУПС:\n'
+        '<a href="https://t.me/profkom_festu">Телеграм-канал</a>\n'
+        '<a href="https://vk.com/profkomkhv">Группа Вконтакте</a>\n'
+    ).format(**settings.CONTACT)
+    bot.send_message(
+        message.chat.id,
+        text,
+        disable_web_page_preview=True
+    )
+
+
 # Tickets block.
 @bot.message_handler(
     func=lambda message: message.text == 'Жилищно-бытовая проблема'
@@ -210,27 +231,6 @@ def reply_state_handler(message):
         ),
         chat_id,
         data.get('current_message_id')
-    )
-
-
-# Contact block.
-@bot.message_handler(func=lambda message: message.text == 'Контакты')
-def contact_block(message):
-    """Send message with contact information."""
-    text = (
-        '<b>Жилищно-бытовая комиссия Профкома студентов ДВГУПС</b>\n'
-        'Председатель комиссии: '
-        '<a href="https://t.me/{tg_username}">{name}</a>\n'
-        '(также можете написать во '
-        '<a href="https://vk.com/{vk_username}">Вконтакте</a>)\n\n'
-        'Профком студентов ДВГУПС:\n'
-        '<a href="https://t.me/profkom_festu">Телеграм-канал</a>\n'
-        '<a href="https://vk.com/profkomkhv">Группа Вконтакте</a>\n'
-    ).format(**settings.CONTACT)
-    bot.send_message(
-        message.chat.id,
-        text,
-        disable_web_page_preview=True
     )
 
 
