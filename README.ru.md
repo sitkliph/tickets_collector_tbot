@@ -18,27 +18,35 @@
 ### Структура проекта
 ```
 tickets_collector_tbot/
-├── LICENSE
-├── README.md
-├── README.ru.md
-├── requirements.txt
-├── setup.cfg
+├── logs/
 ├── tbot_app/
 │   ├── google_sheets/
 │   │   ├── __init__.py
 │   │   ├── main.py
 │   │   ├── settings.py
 │   │   └── utils.py
-│   ├── start_bot.py
-│   └── telegram_bot/
-│       ├── __init__.py
-│       ├── bot.py
-│       ├── handlers.py
-│       ├── menu.py
-│       ├── settings.py
-│       └── states.py
-└── tests/
-    └── __init__.py
+│   ├── telegram_bot/
+│   │   ├── __init__.py
+│   │   ├── bot.py
+│   │   ├── decorators.py
+│   │   ├── exceptions.py
+│   │   ├── filters.py
+│   │   ├── handlers.py
+│   │   ├── menu.py
+│   │   ├── settings.py
+│   │   ├── states.py
+│   │   ├── text_templates.py
+│   │   └── utils.py
+│   ├── Dockerfile
+│   └── start_bot.py
+├── tests/
+│   └── __init__.py
+├── Docker-compose.yml
+├── LICENSE
+├── README.md
+├── README.ru.md
+├── requirements.txt
+└── setup.cfg
 ```
 
 ### Стек использованных технологий
@@ -47,7 +55,7 @@ tickets_collector_tbot/
 - pyTelegramBotAPI 4.22.1
 - gspread 6.2.1
 
-## Установка и запуск проекта
+## Установка и запуск проекта в ручном режиме
 
 ### 1. Клонировать репозиторий и перейти в него в командной строке
 
@@ -62,18 +70,19 @@ cd tickets_collector_tbot
 ### 2. Cоздать и активировать виртуальное окружение
 
 ```bash
-python3 -m venv venv
+python3 -m venv venv  # Linux / macOS
+python -m venv venv   # Windows
 ```
 
-```
-source venv/bin/activate       # Linux / macOS
-       venv/Scripts/activate   # Windows
+```bash
+source venv/bin/activate      # Linux / macOS
+source venv/Scripts/activate  # Windows
 ```
 
 ### 3. Установить зависимости из файла requirements.txt
 
 ```bash
-python3 -m pip install --upgrade pip
+python -m pip install --upgrade pip
 ```
 
 ```bash
@@ -86,18 +95,14 @@ pip install -r requirements.txt
 - Создать service user в консоли Google Cloud и получить JSON ключ.
 - Подключить service user к онлайн таблице Google Sheets.
 - Заполнить константы файлов `tbot_app/google_sheets/settings.py` и `tbot_app/telegram_bot/settings.py`.
-- Создать файл `.env` по примеру:
-
-```
-TELEGRAM_BOT_TOKEN = your_telegram_bot_token
-GOOGLE_API_JSON_KEY_PATH = path_to_service_user_json_key
-```
+- Создать файл `.env` по примеру `.env.example`
+- Запустить Redis или перенастроить проект на использование StateMemoryStorage для разработки
 
 ### 5. Запустить проект
 
 ```bash
 cd tbot_app
-python3 start_bot.py
+python start_bot.py
 ```
 
 ## Пример
