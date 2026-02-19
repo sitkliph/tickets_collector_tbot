@@ -1,0 +1,29 @@
+volumes:
+  redis_data:
+  logs:
+
+services:
+  db:
+    image: redis:7.4.7-alpine
+    env_file:
+      - .env
+    volumes:
+      - redis_data:/data
+    command:
+      - redis-server
+      - --appendonly
+      - yes
+      - --requirepass
+      - ${DB_PASSWORD}
+  bot:
+    build:
+      context: .
+      dockerfile: tbot_app/Dockerfile
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - ./tbot_app/google_sheets/credentials/service_account.json:/run/secrets/sa_key.json:ro
+      - logs:/app/logs
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/sa_key.json
