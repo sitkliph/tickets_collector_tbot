@@ -8,18 +8,16 @@ from telebot.types import Update
 from telegram_bot.bot import bot
 from telegram_bot.settings import WEBHOOK_SECRET
 
-WEBHOOK_PATH = f'/webhook/{WEBHOOK_SECRET}'
-
 api = FastAPI()
 
 
-@api.get('/webhook/health')
+@api.get('/health')
 def health():
     """Check API available."""
     return {'status': 'ok'}
 
 
-@api.post(WEBHOOK_PATH)
+@api.post(f'/{WEBHOOK_SECRET}')
 async def telegram_webhook(request: Request):
     """Configure webhook endponit."""
     try:
