@@ -16,7 +16,10 @@ SCOPES = [
     'https://www.googleapis.com/auth/drive'
 ]
 credentials = Credentials.from_service_account_file(
-    os.getenv('GOOGLE_API_JSON_KEY_PATH'),
+    os.getenv(
+        'GOOGLE_APPLICATION_CREDENTIALS',
+        'google_sheets/credentials/service_account.json'
+    ),
     scopes=SCOPES
 )
 client = gspread.authorize(credentials)
