@@ -1,30 +1,24 @@
 # Tickets Collector Telegram Bot
 [![en](https://img.shields.io/badge/lang-en-white.svg)](README.md)
 
-Телеграм бот для сбора вопросов, жалоб, обращений и запросов от пользоватлей.
-
-## Статус проекта
-Проект в разработке.
+Бот для приема обращений, жалоб, вопросов и заявлений от пользователей.
 
 ## Описание проекта
 Синхронный телеграмм бот, с помощью которого можно собирать обратную связь от пользователей.  
-В `tbot_app/telegram_bot/settings.py` можно настроить название, контактную информацию, inline меню,
+В `tbot_app/telegram_bot/settings.py` можно настроить название, контактную информацию, inline-меню,
 включая кнопки, по нажатию которых бот обрабатывает произвольное текстовое сообщение и
 добавляет запись в таблицу Google Sheets.
-
-Для тестирования и разработки используется хранилище состояний - `telebot.storage.StateMemoryStorage`.  
-При необходимости измените параметр STORAGE в `tbot_app/telegram_bot/settings.py`.
 
 ### Структура проекта
 ```
 tickets_collector_tbot/
-├── logs/
 ├── tbot_app/
 │   ├── google_sheets/
 │   │   ├── __init__.py
 │   │   ├── main.py
 │   │   ├── settings.py
 │   │   └── utils.py
+│   ├── logs/
 │   ├── telegram_bot/
 │   │   ├── __init__.py
 │   │   ├── bot.py
@@ -36,26 +30,33 @@ tickets_collector_tbot/
 │   │   ├── settings.py
 │   │   ├── states.py
 │   │   ├── text_templates.py
-│   │   └── utils.py
+│   │   ├── utils.py
+│   │   └── webhook.py
 │   ├── Dockerfile
 │   └── start_bot.py
 ├── tests/
 │   └── __init__.py
+├── Docker-compose.production.yml
 ├── Docker-compose.yml
 ├── LICENSE
 ├── README.md
 ├── README.ru.md
 ├── requirements.txt
+├── requirements.txt.bak
 └── setup.cfg
 ```
 
 ### Стек использованных технологий
 
 - Python 3.12.7
-- pyTelegramBotAPI 4.22.1
+- pyTelegramBotAPI 4.31.0
 - gspread 6.2.1
+- Redis 7.1.0
+- FastAPI 0.129.0
+- Uvicorn 0.41.0
+- Docker
 
-## Установка и запуск проекта в ручном режиме
+## Установка и запуск проекта (без использования Docker)
 
 ### 1. Клонировать репозиторий и перейти в него в командной строке
 
@@ -96,7 +97,6 @@ pip install -r requirements.txt
 - Подключить service user к онлайн таблице Google Sheets.
 - Заполнить константы файлов `tbot_app/google_sheets/settings.py` и `tbot_app/telegram_bot/settings.py`.
 - Создать файл `.env` по примеру `.env.example`
-- Запустить Redis или перенастроить проект на использование StateMemoryStorage для разработки
 
 ### 5. Запустить проект
 
@@ -106,7 +106,7 @@ python start_bot.py
 ```
 
 ## Пример
-https://t.me/KhozRevizorBot
+https://t.me/RevizorDVGUPSBot
 
 ## Автор
 Sergei Bakin  

@@ -3,28 +3,22 @@
 
 Telegram bot collects questions, complaints, appeals and requests from users.
 
-## Status
-In development.
-
 ## Description
 Sync Telegram bot that allows you to collect user feedback.  
 In `tbot_app/telegram_bot/settings.py`, you can configure the bot name, contact information, and inline menu,
 including buttons that trigger the bot to process text messages and
 add records to a Google Sheets table.
 
-For testing and development, the state storage `telebot.storage.StateMemoryStorage` is used.  
-If necessary, change the STORAGE parameter in `tbot_app/telegram_bot/settings.py`.
-
 ### Structure
 ```
 tickets_collector_tbot/
-├── logs/
 ├── tbot_app/
 │   ├── google_sheets/
 │   │   ├── __init__.py
 │   │   ├── main.py
 │   │   ├── settings.py
 │   │   └── utils.py
+│   ├── logs/
 │   ├── telegram_bot/
 │   │   ├── __init__.py
 │   │   ├── bot.py
@@ -36,26 +30,33 @@ tickets_collector_tbot/
 │   │   ├── settings.py
 │   │   ├── states.py
 │   │   ├── text_templates.py
-│   │   └── utils.py
+│   │   ├── utils.py
+│   │   └── webhook.py
 │   ├── Dockerfile
 │   └── start_bot.py
 ├── tests/
 │   └── __init__.py
+├── Docker-compose.production.yml
 ├── Docker-compose.yml
 ├── LICENSE
 ├── README.md
 ├── README.ru.md
 ├── requirements.txt
+├── requirements.txt.bak
 └── setup.cfg
 ```
 
 ### Tech Stack
 
 - Python 3.12.7
-- pyTelegramBotAPI 4.22.1
+- pyTelegramBotAPI 4.31.0
 - gspread 6.2.1
+- Redis 7.1.0
+- FastAPI 0.129.0
+- Uvicorn 0.41.0
+- Docker
 
-## Project Setup and Run in manual mode
+## Project Setup and Run (without Docker)
 
 ### 1. Clone the repository and navigate into it using the command line
 
@@ -96,7 +97,6 @@ pip install -r requirements.txt
 - Add a service user in editors of Google Sheets table.
 - Fill constants in `tbot_app/google_sheets/settings.py` and `tbot_app/telegram_bot/settings.py`.
 - Create file `.env` like `.env.example`
-- Install and run Redis or use StateMemoryStorage for development
 
 ### 5. Run project
 
@@ -106,7 +106,7 @@ python start_bot.py
 ```
 
 ## Example
-https://t.me/KhozRevizorBot
+https://t.me/RevizorDVGUPSBot
 
 ## Author
 Sergei Bakin  
