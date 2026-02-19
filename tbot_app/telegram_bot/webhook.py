@@ -13,7 +13,7 @@ WEBHOOK_PATH = f'/webhook/{WEBHOOK_SECRET}'
 api = FastAPI()
 
 
-@api.get('/health')
+@api.get('/webhook/health')
 def health():
     """Check API available."""
     return {'status': 'ok'}
