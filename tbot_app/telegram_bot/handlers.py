@@ -1,40 +1,47 @@
 """Handlers for telegram bot."""
+import time
 from datetime import datetime
 
-from telebot import types
+from telebot import logger, types
+from telebot.apihelper import ApiTelegramException
 
 from google_sheets import insert_ticket_info
-from telegram_bot import settings
-# from telegram_bot import text_templates
-# from telegram_bot import utils
-from telegram_bot.bot import bot, bot_logger
-# from telegram_bot.decorators import confirm_command
+from telegram_bot import settings, text_templates, utils
+from telegram_bot.bot import bot
+from telegram_bot.decorators import confirm_command
+from telegram_bot.exceptions import InvalidAdminCommandError
 from telegram_bot.menu import Menu
 from telegram_bot.states import SupportedStates as states
 
-
 menu = Menu()
-logger = bot_logger
 
 
 # Default commands.
-@bot.message_handler(commands=['start',])
+@bot.message_handler(commands=['start', 'restart'])
 def command_start(message):
     """Handle command /start."""
     chat = message.chat
+    user_id = message.from_user.id
     text = (
+        '<tg-emoji emoji-id="5397939353156609692">💬</tg-emoji> '
         f'<b>{chat.first_name}, добро пожаловать в {settings.BOT_NAME}!</b>'
         '\n\n'
-        'Выберите интересующий Вас раздел с помощью кнопок клавиатуры.'
+        'Выберите интересующий Вас раздел с помощью кнопок клавиатуры '
+        '<tg-emoji emoji-id="5397810121885639797">⌨️</tg-emoji>'
     )
-    # if str(message.from_user.id) in utils.get_admins_ids():
-    #     text += text_templates.ADMIN_COMANDS
+    text_additional = utils.append_admin_start_message(user_id)
+    if text_additional is not None:
+        text += text_additional
+
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    button_tickets = types.KeyboardButton('Жилищно-бытовая проблема')
-    button_contacts = types.KeyboardButton('Контакты')
+    button_tickets = types.KeyboardButton(
+        'Создать запрос', icon_custom_emoji_id='5400151776710126080'
+    )
+    button_contacts = types.KeyboardButton(
+        'Контакты', icon_custom_emoji_id='5397829049806513915'
+    )
     keyboard.add(button_tickets, button_contacts)
 
-    user_id = message.from_user.id
     bot.set_state(user_id, states.in_menu, chat.id)
     with bot.retrieve_data(user_id, chat.id) as data:
         if not data.get('tickets'):
@@ -42,7 +49,7 @@ def command_start(message):
         if not data.get('tickets_counter'):
             data['tickets_counter'] = 0
 
-    # utils.register_user(user_id)
+    utils.register_user(user_id)
 
     bot.send_message(
         chat.id,
@@ -51,94 +58,128 @@ def command_start(message):
     )
 
 
-# # Admin commands (Redis is required).
-# @bot.message_handler(
-#     commands=['add_admin', 'del_admin', 'broadcast'], is_bot_admin=True
-# )
-# @confirm_command
-# def admin_commands(message):
-#     """Handle admin commands."""
-#     logger.info(
-#         f'Пользователем @{message.from_user.username} введена команда '
-#         'администратора.'
-#     )
-#     return utils.get_command_param(message)
+# Admin commands (Redis is required).
+@bot.message_handler(
+    commands=['add_admin', 'del_admin', 'broadcast'], is_bot_admin=True
+)
+@confirm_command(bot)
+def admin_commands(message):
+    """Handle admin commands."""
+    logger.info(
+        f'Пользователем @{message.from_user.username} введена команда '
+        'администратора.'
+    )
+    try:
+        return utils.get_command_param(message)
+    # TODO переписать в exception_handler
+    except InvalidAdminCommandError as error:
+        if error.command == 'broadcast':
+            param_pattern = 'сообщение'
+        else:
+            param_pattern = 'ID пользователя'
+        bot.reply_to(
+            error.message,
+            (
+                'Команда введена неверно!\n'
+                'Правильное использование: '
+                f'<pre>/{error.command} &lt;{param_pattern}></pre>'
+            )
+        )
+        raise InvalidAdminCommandError(error.message, error.command)
 
 
-# @bot.callback_query_handler(
-#     func=lambda call: call.data.startswith('confirm'), is_bot_admin=True
-# )
-# def confirm_admin_commands(call):
-#     """Handle confirmation of admin commands."""
-#     _, command, param = call.data.split(':')
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith('confirm'), is_bot_admin=True
+)
+def confirmed_admin_commands(call):
+    """Handle confirmation of admin commands."""
+    _, command, param = call.data.split(':')
 
-#     if command == 'add_admin':
-#         utils.add_admin(int(param))
-#         text = (
-#             f'<a href="tg://user?id={int(param)}">Пользователь</a>'
-#             'добавлен в список администраторов.'
-#         )
-#     elif command == 'del_admin':
-#         utils.del_admin(int(param))
-#         text = (
-#             f'<a href="tg://user?id={int(param)}">Пользователь</a>'
-#             'удален из списка администраторов.'
-#         )
-#     elif command == 'broadcast':
-#         stats = utils.broadcast(param)
-#         text = (
-#             'Рассылка завершена.\n'
-#             'Всего попыток: {total}, из них: '
-#             'успешно отправлено - {sent}, ошибок - {failed}.'
-#         ).format(**stats)
+    if command == 'add_admin':
+        utils.add_admin(int(param))
+        text = (
+            f'<a href="tg://user?id={int(param)}">Пользователь</a>'
+            'добавлен в список администраторов.'
+        )
+    elif command == 'del_admin':
+        utils.del_admin(int(param))
+        text = (
+            f'<a href="tg://user?id={int(param)}">Пользователь</a>'
+            'удален из списка администраторов.'
+        )
+    elif command == 'broadcast':
+        chat_ids = utils.redis_client.smembers('users:all')
+        stats = {
+            'total': len(chat_ids),
+            'sent': 0,
+            'failed': 0
+        }
+        for chat_id in chat_ids:
+            try:
+                bot.send_message(int(chat_id), param)
+                stats['sent'] += 1
+                time.sleep(0.5)
+            except ApiTelegramException:
+                stats['failed'] += 1
+                time.sleep(0.5)
+        text = (
+            '<b>Рассылка завершена.</b>\n'
+            'Всего попыток: {total}, из них:\n'
+            'успешно отправлено - {sent},\n'
+            'ошибок - {failed}.'
+        ).format(**stats)
 
-#     logger.info(
-#         f'Подтверждена и выполнена команда /{command} с параметром {param}.'
-#     )
+    notification_text = (
+        f'Подтверждена и выполнена команда /{command} с параметром "{param}".'
+    )
+    logger.info(notification_text)
+    bot.send_message(
+        settings.NOTIFICATION_CHAT_ID,
+        notification_text
+    )
 
-#     bot.edit_message_text(
-#         text,
-#         call.message.chat.id,
-#         call.message.message_id
-#     )
+    bot.edit_message_text(
+        text,
+        call.message.chat.id,
+        call.message.message_id
+    )
 
 
-# @bot.callback_query_handler(
-#     func=lambda call: call.data == 'cancel', is_bot_admin=True
-# )
-# def cancel_admin_commands(call):
-#     """Handle cancelation of admin commands."""
-#     bot.edit_message_text(
-#         'Команда отменена.',
-#         call.message.chat.id,
-#         call.message.message_id
-#     )
+@bot.callback_query_handler(
+    func=lambda call: call.data == 'cancel', is_bot_admin=True
+)
+def cancel_admin_commands(call):
+    """Handle cancelation of admin commands."""
+    bot.edit_message_text(
+        'Команда отменена.',
+        call.message.chat.id,
+        call.message.message_id
+    )
 
 
 # Contact block.
 @bot.message_handler(func=lambda message: message.text == 'Контакты')
 def contact_block(message):
     """Send message with contact information."""
-    text = (
-        '<b>Жилищно-бытовая комиссия Профкома студентов ДВГУПС</b>\n'
-        'Председатель комиссии: '
-        '<a href="https://t.me/{tg_username}">{name}</a>\n'
-        '(также можете написать во '
-        '<a href="https://vk.com/{vk_username}">Вконтакте</a>)\n\n'
-        'Профком студентов ДВГУПС:\n'
+    text = ''
+    for contact in settings.CONTACTS:
+        text += text_templates.CONTACT.format(**contact)
+    text += (
+        '<tg-emoji emoji-id="5397639147827521319">🏛️</tg-emoji> '
+        '<b>Профком студентов ДВГУПС:</b>\n'
         '<a href="https://t.me/profkom_festu">Телеграм-канал</a>\n'
         '<a href="https://vk.com/profkomkhv">Группа Вконтакте</a>\n'
-    ).format(**settings.CONTACT)
+    )
     bot.send_message(
         message.chat.id,
         text,
-        disable_web_page_preview=True
+        link_preview_options=types.LinkPreviewOptions(True)
     )
 
 
 # Tickets block.
 @bot.message_handler(
-    func=lambda message: message.text == 'Жилищно-бытовая проблема'
+    func=lambda message: message.text == 'Создать запрос'
 )
 def tickets_block(message):
     """Send message with inline menu to choose type of ticket."""
@@ -201,6 +242,7 @@ def reply_state_handler(message):
             'id': data.get('current_ticket_id'),
             'type': data.get('current_ticket_type'),
             'text': message.text.strip(),
+            'user': f'https://t.me/{user.username}',
             'status': 'created'
         }
         data['tickets'] = data.get('tickets') + [ticket]
@@ -208,7 +250,7 @@ def reply_state_handler(message):
     current_ticket = data.get('tickets')[-1]
     notification_text = (
         '<b>Пришел тикет от пользователя '
-        f'<a href="tg://user?id={user.id}">{user.first_name}</a></b>'
+        f'<a href="https://t.me/{user.username}">{user.first_name}</a></b>'
         '\n\n'
         'Номер: {id}\n'
         'Тип: {type}, статус {status}'
@@ -225,24 +267,12 @@ def reply_state_handler(message):
     bot.set_state(user.id, states.in_menu, message.chat.id)
     bot.edit_message_text(
         (
+            '<tg-emoji emoji-id="5397936320909699087">✅</tg-emoji> '
             f'<b>Тикет №{current_ticket.get('id')}</b> принят к рассмотрению '
             'администраторами.\n'
-            'Ожидайте ответ.'
+            'Ожидайте ответ '
+            '<tg-emoji emoji-id="5397939353156609692">💬</tg-emoji>'
         ),
         chat_id,
         data.get('current_message_id')
     )
-
-
-def start_polling():
-    """Start polling of telegram server."""
-    last_notification_message = ''
-    try:
-        bot.polling()
-    except Exception as error:
-        notification_message = f'Сбой в работе программы: {error}'
-        if last_notification_message != notification_message:
-            bot.send_message(
-                settings.NOTIFICATION_CHAT_ID,
-                notification_message,
-            )

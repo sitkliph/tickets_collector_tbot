@@ -21,4 +21,6 @@ class IsBotAdminFilter(SimpleCustomFilter):
         self.admin_ids = get_admins_ids()
 
     def check(self, message):
-        return str(message.from_user.id) in self.admin_ids
+        if self.admin_ids is not None:
+            return str(message.from_user.id) in self.admin_ids
+        return False

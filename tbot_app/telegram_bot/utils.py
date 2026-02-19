@@ -1,71 +1,60 @@
 """Utils for telegram bot."""
-import time
-from typing import cast, Set
-
-import redis
-from telebot.types import Message
-from telebot.apihelper import ApiTelegramException
+from typing import Set, cast
 
 from telegram_bot import settings
-from telegram_bot.bot import bot
+from telegram_bot.decorators import check_redis
 from telegram_bot.exceptions import InvalidAdminCommandError
-
+from telegram_bot.settings import STORAGE
+from telegram_bot.text_templates import ADMIN_COMANDS
 
 USERS_DATABASE_KEY = 'users:all'
 ADMINS_DATABASE_KEY = 'users:admins'
 
-redis_client = redis.Redis(
-    password=settings.DATA_BASE_PASSWORD, decode_responses=True
-)
-redis_client.sadd(ADMINS_DATABASE_KEY, *settings.START_ADMIN_IDS)
+
+@check_redis
+def add_admins_from_settings():
+    """Add admins from settings.py in database."""
+    STORAGE.redis.sadd(ADMINS_DATABASE_KEY, *settings.START_ADMIN_IDS)
 
 
-def get_admins_ids() -> Set:
+@check_redis
+def get_admins_ids() -> list:
     """Get ids of admin users from database."""
-    return cast(Set, redis_client.smembers(ADMINS_DATABASE_KEY))
+    return [
+        admin_id.decode() for admin_id in (
+            cast(Set, STORAGE.redis.smembers(ADMINS_DATABASE_KEY))
+        )
+    ]
 
 
+@check_redis
+def append_admin_start_message(user_id: int) -> str:
+    """Return adiitinal text for start message if user is admin."""
+    if str(user_id) in get_admins_ids():
+        return ADMIN_COMANDS
+    return ''
+
+
+@check_redis
 def add_admin(user_id: int) -> None:
     """Add admin in database."""
-    redis_client.sadd(ADMINS_DATABASE_KEY, str(user_id))
+    STORAGE.redis.sadd(ADMINS_DATABASE_KEY, str(user_id))
 
 
+@check_redis
 def del_admin(user_id: int) -> None:
     """Delete admin from database."""
-    redis_client.srem(ADMINS_DATABASE_KEY, str(user_id))
+    STORAGE.redis.srem(ADMINS_DATABASE_KEY, str(user_id))
 
 
+@check_redis
 def register_user(user_id: int) -> None:
     """Register user in database."""
-    redis_client.sadd(USERS_DATABASE_KEY, str(user_id))
+    STORAGE.redis.sadd(USERS_DATABASE_KEY, str(user_id))
 
 
-def broadcast(text: str) -> dict:
-    """
-    Send message to all bot's users.
-
-    Function sends message and returns sending's statistics.
-    """
-    chat_ids = cast(Set, redis_client.smembers('users:all'))
-    stats = {
-        'total': len(chat_ids),
-        'sent': 0,
-        'failed': 0
-    }
-
-    for chat_id in chat_ids:
-        try:
-            bot.send_message(int(chat_id), text)
-            stats['sent'] += 1
-            time.sleep(0.1)
-        except ApiTelegramException:
-            stats['failed'] += 1
-            time.sleep(0.1)
-
-    return stats
-
-
-def get_command_param(message: Message) -> tuple:
+@check_redis
+def get_command_param(message) -> tuple:
     """Check admin command and get parametr from the message."""
     parts = message.text.split(maxsplit=1)
     command = parts[0].lstrip('/')
