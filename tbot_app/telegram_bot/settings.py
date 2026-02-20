@@ -1,6 +1,7 @@
 """Project's settings."""
 import os
 from pathlib import Path
+from secrets import token_urlsafe
 
 from dotenv import load_dotenv
 from telebot.storage import StateMemoryStorage, StateRedisStorage
@@ -16,6 +17,7 @@ WEBHOOK_MODE = (
 )
 WEBHOOK_DOMAIN = os.getenv('WEBHOOK_DOMAIN')
 WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET')
+WEBHOOK_TOKEN = token_urlsafe(32)
 NOTIFICATION_CHAT_ID = os.getenv('NOTIFICATION_CHAT_ID')
 IS_PROD_STORAGE = (
     os.getenv('IS_PROD_STORAGE', 'false').lower() == 'true'

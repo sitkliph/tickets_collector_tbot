@@ -19,7 +19,7 @@ menu = Menu()
 # Default commands.
 @bot.message_handler(commands=['start', 'restart'])
 def command_start(message):
-    """Handle command /start."""
+    """Handle commands /start & /restart."""
     chat = message.chat
     user_id = message.from_user.id
     text = (
@@ -58,7 +58,15 @@ def command_start(message):
     )
 
 
+# TODO удаление id пользователя из спика.
+@bot.message_handler(commands=['stop',])
+def handle_command_stop(message):
+    """Handle command /stop."""
+    bot.delete_state(message.from_user.id, message.chat.id)
+
+
 # Admin commands (Redis is required).
+# TODO добавить /ls_admin
 @bot.message_handler(
     commands=['add_admin', 'del_admin', 'broadcast'], is_bot_admin=True
 )
@@ -98,13 +106,13 @@ def confirmed_admin_commands(call):
     if command == 'add_admin':
         utils.add_admin(int(param))
         text = (
-            f'<a href="tg://user?id={int(param)}">Пользователь</a>'
+            f'<a href="tg://user?id={int(param)}">Пользователь </a>'
             'добавлен в список администраторов.'
         )
     elif command == 'del_admin':
         utils.del_admin(int(param))
         text = (
-            f'<a href="tg://user?id={int(param)}">Пользователь</a>'
+            f'<a href="tg://user?id={int(param)}">Пользователь </a>'
             'удален из списка администраторов.'
         )
     elif command == 'broadcast':
