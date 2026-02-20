@@ -77,7 +77,7 @@ bot.remove_webhook()
 
 if settings.WEBHOOK_MODE:
     url = f'{settings.WEBHOOK_DOMAIN}/webhook/{settings.WEBHOOK_SECRET}'
-    bot.set_webhook(url=url)
+    bot.set_webhook(url, secret_token=settings.WEBHOOK_TOKEN)
 
 
 def start_polling():

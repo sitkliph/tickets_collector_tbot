@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from telebot.types import Update
 
 from telegram_bot.bot import bot
-from telegram_bot.settings import WEBHOOK_SECRET
+from telegram_bot.settings import WEBHOOK_SECRET, WEBHOOK_TOKEN
 
 api = FastAPI()
 
@@ -20,6 +20,9 @@ def health():
 @api.post(f'/{WEBHOOK_SECRET}')
 async def telegram_webhook(request: Request):
     """Configure webhook endponit."""
+    token = request.headers.get('X-Telegram-Bot-Api-Secret-Token')
+    if token != WEBHOOK_TOKEN:
+        raise HTTPException(status_code=403)
     try:
         raw_body = await request.body()
         update = Update.de_json(raw_body.decode())
