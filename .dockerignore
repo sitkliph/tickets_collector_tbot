@@ -1,0 +1,6 @@
+**/credentials/
+**/__pycache__/
+**/.mypy_cache/
+**/*.json
+**/*.log
+**/.DS_Store
