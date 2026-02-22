@@ -1,11 +1,10 @@
 """Webhook setup."""
-
 import asyncio
 
 from fastapi import FastAPI, HTTPException, Request
 from telebot.types import Update
 
-from telegram_bot.bot import bot
+from telegram_bot.bot import process_updates_from_webhook
 from telegram_bot.settings import WEBHOOK_SECRET, WEBHOOK_TOKEN
 
 api = FastAPI()
@@ -30,6 +29,6 @@ async def telegram_webhook(request: Request):
         raise HTTPException(status_code=400)
 
     loop = asyncio.get_running_loop()
-    loop.run_in_executor(None, bot.process_new_updates, [update])
+    loop.run_in_executor(None, process_updates_from_webhook, [update])
 
     return {'ok': True}

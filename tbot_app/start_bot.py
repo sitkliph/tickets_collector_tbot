@@ -1,7 +1,7 @@
 """Starts telegram bot."""
 import sys
 
-from telegram_bot import start_polling, WEBHOOK_MODE
+from telegram_bot import WEBHOOK_MODE, start_polling
 
 if __name__ == '__main__' and not WEBHOOK_MODE:
     try:
