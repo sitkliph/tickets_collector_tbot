@@ -1,12 +1,15 @@
 """Initialize the telegram bot."""
 import logging
+from typing import List
 
 from redis.exceptions import ConnectionError
 from telebot import TeleBot, logger
 from telebot.custom_filters import StateFilter
 from telebot.states.sync.middleware import StateMiddleware
+from telebot.types import Update
 
 from telegram_bot import settings
+from telegram_bot.decorators import handle_exceptions
 from telegram_bot.exceptions import EmptyEnvVarsError, RedisUnavailableError
 from telegram_bot.filters import IsBotAdminFilter
 from telegram_bot.utils import add_admins_from_settings
@@ -80,15 +83,13 @@ if settings.WEBHOOK_MODE:
     bot.set_webhook(url, secret_token=settings.WEBHOOK_TOKEN)
 
 
-def start_polling():
+@handle_exceptions(bot)
+def start_polling() -> None:
     """Start polling of telegram server."""
-    last_notification_message = ''
-    try:
-        bot.polling()
-    except Exception as error:
-        notification_message = f'Сбой в работе программы: {error}'
-        if last_notification_message != notification_message:
-            bot.send_message(
-                settings.NOTIFICATION_CHAT_ID,
-                notification_message,
-            )
+    bot.polling()
+
+
+@handle_exceptions(bot)
+def process_updates_from_webhook(updates: List[Update]) -> None:
+    """Process new updates from telgram webhook to bot."""
+    bot.process_new_updates(updates)
