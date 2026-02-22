@@ -8,7 +8,6 @@ from google.oauth2.service_account import Credentials
 from google_sheets import settings
 from google_sheets.utils import make_ticket_info
 
-
 load_dotenv()
 
 SCOPES = [
