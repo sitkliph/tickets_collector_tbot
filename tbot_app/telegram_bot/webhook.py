@@ -1,5 +1,4 @@
 """Webhook setup."""
-
 import asyncio
 
 from fastapi import FastAPI, HTTPException, Request
