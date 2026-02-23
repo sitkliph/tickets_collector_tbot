@@ -22,6 +22,8 @@ services:
     env_file: .env
     depends_on:
       - db
+    ports:
+      - 8000:8000
     volumes:
       - ./service_account.json:/run/secrets/sa_key.json:ro
       - logs:/app/logs
