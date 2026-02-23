@@ -94,7 +94,7 @@ jobs:
           git config user.name 'CI/CD-sitkliph'
           git config user.email 'sergey.bakin2000@gmail.com'
           git tag -a ${{ steps.version.outputs.version }} -m "Release v${{ steps.version.outputs.version }}"
-          git push ${{ steps.version.outputs.version }}
+          git push --tags
 
   build_and_push_to_docker_hub:
     name: Push Docker images to DockerHub
