@@ -1,5 +1,6 @@
 # Tickets Collector Telegram Bot
-[![en](https://img.shields.io/badge/lang-en-white.svg)](README.md)
+[![en](https://img.shields.io/badge/lang-en-white.svg)](README.md) 
+![workflow status badge](https://github.com/sitkliph/tickets_collector_tbot/actions/workflows/main.yml/badge.svg)
 
 Бот для приема обращений, жалоб, вопросов и заявлений от пользователей.
 
