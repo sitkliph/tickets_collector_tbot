@@ -1,5 +1,6 @@
 # Tickets Collector Telegram Bot
-[![ru](https://img.shields.io/badge/lang-ru-blue.svg)](README.ru.md)
+[![ru](https://img.shields.io/badge/lang-ru-blue.svg)](README.ru.md) 
+![workflow status badge](https://github.com/sitkliph/tickets_collector_tbot/actions/workflows/main.yml/badge.svg)
 
 Telegram bot collects questions, complaints, appeals and requests from users.
 

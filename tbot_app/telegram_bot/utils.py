@@ -1,5 +1,9 @@
 """Utils for telegram bot."""
+import time
 from typing import Set, cast
+
+from telebot import TeleBot
+from telebot.apihelper import ApiTelegramException
 
 from telegram_bot import settings
 from telegram_bot.decorators import check_redis
@@ -12,7 +16,7 @@ ADMINS_DATABASE_KEY = 'users:admins'
 
 
 @check_redis
-def add_admins_from_settings():
+def add_admins_from_settings() -> None:
     """Add admins from settings.py in database."""
     STORAGE.redis.sadd(ADMINS_DATABASE_KEY, *settings.START_ADMIN_IDS)
 
@@ -51,6 +55,37 @@ def del_admin(user_id: int) -> None:
 def register_user(user_id: int) -> None:
     """Register user in database."""
     STORAGE.redis.sadd(USERS_DATABASE_KEY, str(user_id))
+
+
+@check_redis
+def broadcast(bot: TeleBot) -> str:
+    """Send custom message to all users of bot."""
+    chat_ids = [
+        user_id.decode() for user_id in (
+            cast(Set, STORAGE.redis.smembers(USERS_DATABASE_KEY))
+        )
+    ]
+    stats = {
+        'total': len(chat_ids),
+        'sent': 0,
+        'failed': 0
+    }
+    param = cast(bytes, STORAGE.redis.get('global:broadcast_param')).decode()
+    for chat_id in chat_ids:
+        try:
+            bot.send_message(int(chat_id), param)
+            stats['sent'] += 1
+            time.sleep(0.5)
+        except ApiTelegramException:
+            stats['failed'] += 1
+            time.sleep(0.5)
+    text = (
+        '<b>Рассылка завершена.</b>\n'
+        'Всего попыток: {total}, из них:\n'
+        'успешно отправлено - {sent},\n'
+        'ошибок - {failed}.'
+    ).format(**stats)
+    return text
 
 
 @check_redis

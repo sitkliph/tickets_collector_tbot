@@ -1,0 +1,165 @@
+name: Main project workflow
+
+on: push
+
+permissions:
+  contents: write
+
+jobs:
+  tests:
+    name: Test with Flake8 linter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Test with flake8
+        run: python -m flake8 tbot_app/
+
+  manage_version:
+    name: Manage version
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: tests
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Get next version
+        id: version
+        run: |
+          git fetch --tags
+
+          LAST_TAG=$(git tag --sort=-v:refname | head -n 1)
+
+          if [ -z "$LAST_TAG" ]; then
+            MAJOR=0
+            MINOR=1
+            PATCH=0
+          else
+            VERSION=${LAST_TAG#v}
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          fi
+
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:%s)
+          else
+            COMMITS=$(git log "$LAST_TAG"..HEAD --pretty=format:%s)
+          fi
+
+          echo "Commits since last tag:"
+          echo "$COMMITS"
+
+          BUMP="patch"
+
+          if echo "$COMMITS" | grep -E 'BREAKING CHANGE|!:' > /dev/null; then
+            BUMP="major"
+          elif echo "$COMMITS" | grep -E '^feat:' > /dev/null; then
+            BUMP="minor"
+          elif echo "$COMMITS" | grep -E '^fix:' > /dev/null; then
+            BUMP="patch"
+          fi
+
+          echo "Version bump type: $BUMP"
+
+          if [ "$BUMP" = "major" ]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif [ "$BUMP" = "minor" ]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create git tag
+        run: |
+          git tag -a ${{ steps.version.outputs.version }} -m "Release v${{ steps.version.outputs.version }}"
+          git push ${{ steps.version.outputs.version }}
+
+  build_and_push_to_docker_hub:
+    name: Push Docker images to DockerHub
+    runs-on: ubuntu-latest
+    needs: manage_version
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker 
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Bot's App to DockerHub
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./tbot_app/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/tickets_collector_tbot:${{ needs.manage_version.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/tickets_collector_tbot:latest
+
+  deploy:
+    name: Deploy project to the server
+    runs-on: ubuntu-latest
+    needs: build_and_push_to_docker_hub
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Copy docker-compose.yml via ssh
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          source: "docker-compose.production.yml"
+          target: "pspo_dvgups_bot"
+
+      - name: Executing remote ssh commands to deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            cd pspo_dvgups_bot
+            sudo docker compose -f docker-compose.production.yml pull
+            sudo docker compose -f docker-compose.production.yml down
+            sudo docker compose -f docker-compose.production.yml up -d
+
+  send_message:
+    name: Send message via Telegram bot
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Send message
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: Деплой проекта ${{github.event.repository.name}} выполнен успешно!

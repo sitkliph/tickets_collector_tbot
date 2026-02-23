@@ -1,9 +1,7 @@
 """Handlers for telegram bot."""
-import time
 from datetime import datetime
 
 from telebot import logger, types
-from telebot.apihelper import ApiTelegramException
 
 from google_sheets import insert_ticket_info
 from telegram_bot import settings, text_templates, utils
@@ -18,7 +16,7 @@ menu = Menu()
 
 # Default commands.
 @bot.message_handler(commands=['start', 'restart'])
-def command_start(message):
+def handle_command_start(message):
     """Handle commands /start & /restart."""
     chat = message.chat
     user_id = message.from_user.id
@@ -58,28 +56,32 @@ def command_start(message):
     )
 
 
-# TODO удаление id пользователя из спика.
 @bot.message_handler(commands=['stop',])
 def handle_command_stop(message):
     """Handle command /stop."""
-    bot.delete_state(message.from_user.id, message.chat.id)
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+    bot.delete_state(user_id, chat_id)
+    bot.reset_data(user_id, chat_id)
+    bot.reply_to(
+        message,
+        text_templates.COMMAND_STOP_MSG
+    )
 
 
 # Admin commands (Redis is required).
-# TODO добавить /ls_admin
 @bot.message_handler(
     commands=['add_admin', 'del_admin', 'broadcast'], is_bot_admin=True
 )
 @confirm_command(bot)
-def admin_commands(message):
-    """Handle admin commands."""
+def handle_admin_commands(message):
+    """Handle inputed admin commands."""
     logger.info(
         f'Пользователем @{message.from_user.username} введена команда '
         'администратора.'
     )
     try:
         return utils.get_command_param(message)
-    # TODO переписать в exception_handler
     except InvalidAdminCommandError as error:
         if error.command == 'broadcast':
             param_pattern = 'сообщение'
@@ -96,10 +98,29 @@ def admin_commands(message):
         raise InvalidAdminCommandError(error.message, error.command)
 
 
+@bot.message_handler(
+    commands=['ls_admin',], is_bot_admin=True
+)
+def handle_safe_admin_commands(message):
+    """Handle admin commands without writing or changing data."""
+    text = (
+        'Список администраторов бота: \n'
+    )
+    for number, admin_id in enumerate(utils.get_admins_ids, 1):
+        text += (
+            f'{number}. '
+            f'<a href="tg://user?id={admin_id}">id - {admin_id}</a>\n'
+        )
+    bot.reply_to(
+        message,
+        text
+    )
+
+
 @bot.callback_query_handler(
     func=lambda call: call.data.startswith('confirm'), is_bot_admin=True
 )
-def confirmed_admin_commands(call):
+def handle_confirmed_admin_commands(call):
     """Handle confirmation of admin commands."""
     _, command, param = call.data.split(':')
 
@@ -116,26 +137,7 @@ def confirmed_admin_commands(call):
             'удален из списка администраторов.'
         )
     elif command == 'broadcast':
-        chat_ids = utils.redis_client.smembers('users:all')
-        stats = {
-            'total': len(chat_ids),
-            'sent': 0,
-            'failed': 0
-        }
-        for chat_id in chat_ids:
-            try:
-                bot.send_message(int(chat_id), param)
-                stats['sent'] += 1
-                time.sleep(0.5)
-            except ApiTelegramException:
-                stats['failed'] += 1
-                time.sleep(0.5)
-        text = (
-            '<b>Рассылка завершена.</b>\n'
-            'Всего попыток: {total}, из них:\n'
-            'успешно отправлено - {sent},\n'
-            'ошибок - {failed}.'
-        ).format(**stats)
+        text = utils.broadcast(bot)
 
     notification_text = (
         f'Подтверждена и выполнена команда /{command} с параметром "{param}".'
@@ -156,7 +158,7 @@ def confirmed_admin_commands(call):
 @bot.callback_query_handler(
     func=lambda call: call.data == 'cancel', is_bot_admin=True
 )
-def cancel_admin_commands(call):
+def handle_canceled_admin_commands(call):
     """Handle cancelation of admin commands."""
     bot.edit_message_text(
         'Команда отменена.',
@@ -167,7 +169,7 @@ def cancel_admin_commands(call):
 
 # Contact block.
 @bot.message_handler(func=lambda message: message.text == 'Контакты')
-def contact_block(message):
+def handle_contact_block(message):
     """Send message with contact information."""
     text = ''
     for contact in settings.CONTACTS:
@@ -189,7 +191,7 @@ def contact_block(message):
 @bot.message_handler(
     func=lambda message: message.text == 'Создать запрос'
 )
-def tickets_block(message):
+def handle_tickets_block(message):
     """Send message with inline menu to choose type of ticket."""
     keyboard, text = menu.get_menu()
 
@@ -201,7 +203,7 @@ def tickets_block(message):
 
 
 @bot.callback_query_handler(func=lambda call: True)
-def menu_handler(call):
+def handle_inline_menu(call):
     """Handle inline menu buttons."""
     bot.answer_callback_query(call.id, 'Обрабатываю запрос...')
     chat_id = call.message.chat.id

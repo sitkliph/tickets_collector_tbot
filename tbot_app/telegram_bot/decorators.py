@@ -25,6 +25,7 @@ def check_redis(func):
     return wrapper
 
 
+@check_redis
 def confirm_command(bot: TeleBot):
     """Send message with inline menu to confirm admin command."""
     def decorator(func):
@@ -32,11 +33,14 @@ def confirm_command(bot: TeleBot):
         def wrapper(message):
             command, param = func(message)
 
+            if command == 'broadcast':
+                STORAGE.redis.set('global:broadcast_param', param)
+                param = ''
+
             markup = InlineKeyboardMarkup()
             markup.add(
                 InlineKeyboardButton(
                     'Подтвердить',
-                    # TODO сделать поддержку длинных параметров
                     callback_data=f'confirm:{command}:{param}'
                 ),
                 InlineKeyboardButton(
