@@ -106,7 +106,7 @@ def handle_safe_admin_commands(message):
     text = (
         'Список администраторов бота: \n'
     )
-    for number, admin_id in enumerate(utils.get_admins_ids, 1):
+    for number, admin_id in enumerate(utils.get_admins_ids(), 1):
         text += (
             f'{number}. '
             f'<a href="tg://user?id={admin_id}">id - {admin_id}</a>\n'
