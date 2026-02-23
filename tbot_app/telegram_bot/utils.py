@@ -58,7 +58,7 @@ def register_user(user_id: int) -> None:
 
 
 @check_redis
-def broadcast(bot: TeleBot) -> str:
+def broadcast(bot: TeleBot) -> tuple[str, str]:
     """Send custom message to all users of bot."""
     chat_ids = [
         user_id.decode() for user_id in (
@@ -85,7 +85,7 @@ def broadcast(bot: TeleBot) -> str:
         'успешно отправлено - {sent},\n'
         'ошибок - {failed}.'
     ).format(**stats)
-    return text
+    return param, text
 
 
 @check_redis

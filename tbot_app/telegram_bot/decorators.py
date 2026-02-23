@@ -33,6 +33,11 @@ def confirm_command(bot: TeleBot):
         def wrapper(message):
             command, param = func(message)
 
+            message_text = (
+                f'Подтвердите команду <b>{command}</b> '
+                f'с параметром <b>{param}</b>'
+            )
+
             if command == 'broadcast':
                 STORAGE.redis.set('global:broadcast_param', param)
                 param = ''
@@ -51,10 +56,7 @@ def confirm_command(bot: TeleBot):
 
             bot.reply_to(
                 message,
-                (
-                    f'Подтвердите команду <b>{command}</b> '
-                    f'с параметром <b>{param}</b>'
-                ),
+                message_text,
                 reply_markup=markup
             )
         return wrapper

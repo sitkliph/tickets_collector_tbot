@@ -137,7 +137,7 @@ def handle_confirmed_admin_commands(call):
             'удален из списка администраторов.'
         )
     elif command == 'broadcast':
-        text = utils.broadcast(bot)
+        param, text = utils.broadcast(bot)
 
     notification_text = (
         f'Подтверждена и выполнена команда /{command} с параметром "{param}".'
